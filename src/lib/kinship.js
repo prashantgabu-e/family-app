@@ -1,7 +1,10 @@
 import { relationCatalog } from './catalog'
 
 const sexOf = (member, hint = '') => {
-  const value = `${member?.gender || ''} ${hint}`.toLowerCase()
+  const declared = String(member?.gender || '').toLowerCase()
+  if (declared === 'male' || declared === 'man') return 'male'
+  if (declared === 'female' || declared === 'woman') return 'female'
+  const value = hint.toLowerCase()
   if (/woman|female|mummy|mother|dadi|nani|kaki|foi|mami|masi|ben|wife|daughter|dikri|saas|bhabhi|jethani|devrani/.test(value)) return 'female'
   if (/man|male|papa|father|dada|nana|kaka|fua|mama|masa|bhai|husband|son|dikro|jamai|jijaji|banevi|sasra|jeth|devar|salo/.test(value)) return 'male'
   return 'unknown'
@@ -44,6 +47,7 @@ export function inferKinship(rootId, targetId, members, relationships) {
   if (pattern === 'PPC') { const paternal = firstParentSex === 'male'; return result(...(paternal ? bySex(targetSex, ['Kaka', 'Paternal uncle'], ['Foi', 'Paternal aunt'], ['Paternal relative', 'Parent’s sibling']) : bySex(targetSex, ['Mama', 'Maternal uncle'], ['Masi', 'Maternal aunt'], ['Maternal relative', 'Parent’s sibling'])), 3, steps) }
   if (pattern === 'PCC') { const siblingSex = sexOf(steps[1]?.member, steps[1]?.label); return result(...(siblingSex === 'female' ? bySex(targetSex, ['Bhanjo', 'Sister’s son'], ['Bhanji', 'Sister’s daughter'], ['Bhanej', 'Sister’s child']) : bySex(targetSex, ['Bhatrijo', 'Brother’s son'], ['Bhatriji', 'Brother’s daughter'], ['Nibling', 'Brother’s child'])), 3, steps) }
   if (pattern === 'PPCC') { const parentSiblingSex = sexOf(steps[2]?.member, steps[2]?.label); const base = firstParentSex === 'male' ? (parentSiblingSex === 'female' ? 'Foiyai' : 'Pitarai') : (parentSiblingSex === 'female' ? 'Masiyai' : 'Mamerai'); const suffix = targetSex === 'female' ? 'Ben' : targetSex === 'male' ? 'Bhai' : 'Cousin'; return result(`${base} ${suffix}`, `${firstParentSex === 'male' ? 'Paternal' : 'Maternal'} cousin${targetSex === 'female' ? ' (female)' : targetSex === 'male' ? ' (male)' : ''}`, 4, steps) }
+  if (pattern === 'PPCCS') { const parentSiblingSex = sexOf(steps[2]?.member, steps[2]?.label); const cousinSex = sexOf(steps[3]?.member, steps[3]?.label); const base = firstParentSex === 'male' ? (parentSiblingSex === 'female' ? 'Foiyai' : 'Pitarai') : (parentSiblingSex === 'female' ? 'Masiyai' : 'Mamerai'); const suffix = cousinSex === 'male' ? 'Bhabhi' : cousinSex === 'female' ? 'Jijaji' : 'Cousin-in-law'; return result(`${base} ${suffix}`, cousinSex === 'male' ? `${firstParentSex === 'male' ? 'Paternal' : 'Maternal'} male cousin’s wife` : cousinSex === 'female' ? `${firstParentSex === 'male' ? 'Paternal' : 'Maternal'} female cousin’s husband` : `${firstParentSex === 'male' ? 'Paternal' : 'Maternal'} cousin’s spouse`, 5, steps) }
   if (pattern === 'SP') return result(...bySex(targetSex, ['Sasra', 'Father-in-law'], ['Saas', 'Mother-in-law'], ['Parent-in-law', 'Parent-in-law']), 2, steps)
   if (pattern === 'CS') return result(...bySex(targetSex, ['Jamai', 'Son-in-law'], ['Vahu', 'Daughter-in-law'], ['Child-in-law', 'Child-in-law']), 2, steps)
   if (pattern === 'PCS') { const siblingSex = sexOf(steps[1]?.member, steps[1]?.label); return siblingSex === 'female' ? result('Jijaji / Banevi', 'Sister’s husband', 3, steps) : result('Bhabhi', 'Brother’s wife', 3, steps) }
