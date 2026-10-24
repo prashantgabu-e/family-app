@@ -43,3 +43,78 @@ header { width: 100%; padding-left: clamp(20px, 3vw, 48px); padding-right: clamp
 .tree-handle.react-flow__handle-target { width: 12px !important; height: 12px !important; min-width: 12px !important; min-height: 12px !important; opacity: 1 !important; border: 2px solid #fffdfc !important; background: var(--maroon) !important; box-shadow: 0 2px 7px #4d102044; }.tree-handle.react-flow__handle-source { opacity: 0 !important; }
 .tree-handle.react-flow__handle-top { top: 6px !important; }.tree-handle.react-flow__handle-right { right: 6px !important; }.tree-handle.react-flow__handle-bottom { bottom: 6px !important; }.tree-handle.react-flow__handle-left { left: 6px !important; }
 @media (max-width: 650px) { header { height: 62px; padding: 0 14px; }.header-user > span, header .text-button { display: none; }.shell, .tree-page { padding: 34px 16px 60px; }.hero { display: block; padding-bottom: 42px; }.hero .primary { margin-top: 8px; }.tree-toolbar { align-items: stretch; flex-direction: column; }.toolbar-actions { flex-wrap: wrap; }.toolbar-actions .search { flex: 1; }.search input { min-width: 0; width: 100%; }.tree-canvas { min-height: 440px; height: 58vh; }.profile { top: auto; bottom: 0; height: min(78dvh, 700px); border-radius: 20px 20px 0 0; }.form-grid, .relation-options, .member-essentials { grid-template-columns: 1fr; }.dialog { padding: 18px; }.group-grid { grid-template-columns: 1fr; }.tree-toolbar .primary { flex: 1; }.directory-grid { grid-template-columns: 1fr; }.optional-details summary span { display: block; margin: 4px 0 0; } }
+
+/* Phone layout: keep controls deliberate and give the graph room to be used by touch. */
+@media (max-width: 650px) {
+  body { overflow-x: hidden; }
+  header { gap: 10px; }
+  .brand { max-width: calc(100vw - 68px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
+  .header-user { margin-left: 0; }
+  .header-user .icon-button { padding: 9px; min-width: 42px; min-height: 42px; }
+
+  .tree-page { padding-top: 24px; padding-bottom: 42px; }
+  .tree-toolbar { gap: 14px; margin-bottom: 14px; }
+  .tree-toolbar h2 { font-size: 26px; line-height: 1.15; }
+  .tree-toolbar .eyebrow { margin-bottom: 7px; }
+  .toolbar-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .toolbar-actions .search { grid-column: 1 / -1; min-height: 44px; }
+  .toolbar-actions .search input { font-size: 16px; }
+  .toolbar-actions .smart-filter { min-height: 42px; max-width: 148px; }
+  .toolbar-actions .text-button { display: none; }
+  .tree-toolbar .primary { min-height: 42px; padding: 10px 13px; white-space: nowrap; }
+
+  .tree-canvas { height: clamp(430px, 62dvh, 620px); min-height: 430px; border-radius: 14px; }
+  .tree-search { top: 10px; left: 10px; right: 10px; min-height: 40px; padding: 7px 10px; }
+  .tree-search input { width: 100%; min-width: 0; font-size: 16px; }
+  .tree-extras { left: 10px; right: 10px; bottom: 10px; top: auto; max-width: none; justify-content: flex-end; pointer-events: none; }
+  .tree-extras > button { min-height: 40px; padding: 8px 10px; pointer-events: auto; }
+  .tree-extras > button:nth-of-type(2),
+  .tree-extras > button:nth-of-type(3),
+  .tree-extras > button:nth-of-type(4),
+  .tree-extras > button:nth-of-type(6) { display: none; }
+  .react-flow__controls { left: 10px !important; bottom: 10px !important; box-shadow: 0 3px 12px #4d102025; }
+  .react-flow__controls-button { width: 38px !important; height: 38px !important; }
+  .react-flow__minimap { display: none; }
+  .node-card { width: 202px; min-height: 78px; padding: 10px 12px; border-radius: 12px; }
+  .node-card .avatar { width: 40px; height: 40px; flex-basis: 40px; }
+  .node-card b { font-size: 13px; }
+  .node-card .node-location { max-width: 125px; }
+  .tree-handle.react-flow__handle-target { width: 14px !important; height: 14px !important; min-width: 14px !important; min-height: 14px !important; }
+  .react-flow__edge-text { font-size: 11px; }
+
+  .directory { margin-top: 30px; }
+  .section-title { align-items: center; }
+  .section-title h2 { font-size: 23px; }
+  .directory-grid { gap: 8px; }
+  .directory-person { min-height: 62px; padding: 10px 12px; }
+
+  .profile { width: 100%; max-width: none; height: min(76dvh, 720px); padding: 48px 20px calc(20px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; box-shadow: 0 -10px 32px #4e271b2e; }
+  .profile::before { content: ''; position: absolute; top: 10px; left: 50%; width: 42px; height: 4px; border-radius: 999px; background: #d8bec4; transform: translateX(-50%); }
+  .profile .close { top: 15px; right: 14px; padding: 9px; min-width: 42px; min-height: 42px; }
+  .profile > .avatar.large { width: 70px; height: 70px; flex-basis: 70px; margin-bottom: 13px; font-size: 20px; }
+  .profile > h2 { font-size: 28px; overflow-wrap: anywhere; }
+  .profile .kinship-badge { margin-bottom: 16px; }
+  .profile-details dl > div { grid-template-columns: 86px minmax(0, 1fr); }
+  .profile-relations > button { min-height: 58px; }
+  .profile .full { position: sticky; bottom: 0; margin-top: 20px; min-height: 46px; }
+
+  .overlay { align-items: end; padding: 0; }
+  .dialog, .dialog.wide { width: 100%; max-height: min(92dvh, 820px); border-radius: 22px 22px 0 0; padding: 20px 16px calc(18px + env(safe-area-inset-bottom)); }
+  .dialog-head { margin-bottom: 14px; gap: 12px; }
+  .dialog-head h2 { font-size: 21px; line-height: 1.25; }
+  .member-essentials, fieldset { padding: 11px; }
+  .existing-relations label { grid-template-columns: 1fr; gap: 5px; }
+  .existing-relations > div { align-items: center; }
+  .new-relations .form-grid { gap: 8px; }
+  .dialog-actions { position: sticky; bottom: -18px; margin: 0 -16px -18px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: #fffdfb; border-top: 1px solid #eedade; }
+  .dialog-actions .primary { min-height: 44px; }
+  .danger { min-width: 92px; }
+}
+
+@media (max-width: 380px) {
+  .toolbar-actions { grid-template-columns: 1fr; }
+  .toolbar-actions .smart-filter, .tree-toolbar .primary { width: 100%; max-width: none; }
+  .tree-extras > button:first-child { font-size: 0; }
+  .tree-extras > button:first-child svg { margin: 0; }
+  .node-card { width: 186px; }
+}

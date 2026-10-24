@@ -9,6 +9,12 @@ const FamilyNode = memo(({ data }) => <article className={`node-card ${data.memb
 const FAMILY_NODE_TYPES = Object.freeze({ familyMember: FamilyNode })
 
 function focusedFamilyLayout(members, relationships, centerId) {
+  const compact = typeof window !== 'undefined' && window.innerWidth <= 650
+  const nodeWidth = compact ? 202 : 235
+  const nodeHeight = compact ? 78 : 96
+  const horizontalGap = compact ? 228 : 290
+  const selectedRowGap = compact ? 235 : 300
+  const generationGap = compact ? 154 : 210
   const links = new Map(members.map((member) => [member.id, []]))
   relationships.forEach((relationship) => { links.get(relationship.fromMemberId)?.push({ other: relationship.toMemberId, relationship, direction: 1 }); links.get(relationship.toMemberId)?.push({ other: relationship.fromMemberId, relationship, direction: -1 }) })
   const level = new Map([[centerId, 0]]); const queue = [centerId]
@@ -17,9 +23,9 @@ function focusedFamilyLayout(members, relationships, centerId) {
   const positions = new Map()
   for (const [rowLevel, row] of rows) {
     const centerMember = row.find((member) => member.id === centerId)
-    if (centerMember) { positions.set(centerMember.id, { x: -118, y: -48 }); const others = row.filter((member) => member.id !== centerId); others.forEach((member, index) => { const step = Math.floor(index / 2) + 1; const side = index % 2 === 0 ? 1 : -1; positions.set(member.id, { x: side * step * 300 - 118, y: -48 }) }) } else row.sort((a, b) => a.fullName.localeCompare(b.fullName)).forEach((member, index) => positions.set(member.id, { x: (index - (row.length - 1) / 2) * 290 - 118, y: rowLevel * 210 - 48 }))
+    if (centerMember) { positions.set(centerMember.id, { x: -nodeWidth / 2, y: -nodeHeight / 2 }); const others = row.filter((member) => member.id !== centerId); others.forEach((member, index) => { const step = Math.floor(index / 2) + 1; const side = index % 2 === 0 ? 1 : -1; positions.set(member.id, { x: side * step * selectedRowGap - nodeWidth / 2, y: -nodeHeight / 2 }) }) } else row.sort((a, b) => a.fullName.localeCompare(b.fullName)).forEach((member, index) => positions.set(member.id, { x: (index - (row.length - 1) / 2) * horizontalGap - nodeWidth / 2, y: rowLevel * generationGap - nodeHeight / 2 }))
   }
-  return members.map((member) => ({ ...member, position: positions.get(member.id) || { x: -118, y: -48 } }))
+  return members.map((member) => ({ ...member, position: positions.get(member.id) || { x: -nodeWidth / 2, y: -nodeHeight / 2 } }))
 }
 
 function nearestHandles(source, target) { const dx = target.x - source.x; const dy = target.y - source.y; if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? ['right', 'left'] : ['left-source', 'right-target']; return dy > 0 ? ['bottom', 'top'] : ['top-source', 'bottom-target'] }
