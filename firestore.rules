@@ -29,5 +29,9 @@ service cloud.firestore {
     match /memberLabels/{labelId} {
       allow read, write: if isOwner();
     }
+    match /activityLogs/{logId} {
+      allow read, create: if isOwner();
+      allow update, delete: if false;
+    }
   }
 }

@@ -1,103 +1,65 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
 import { auth, db } from './firebase'
 
-const clean = (data) => Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined && value !== ''))
-export async function loadGroupData(groupId) {
-  await cleanupVoidMembers()
-  const [members, relationships, group] = await Promise.all([
-    getDocs(query(collection(db, 'members'), where('familyGroupId', '==', groupId))),
-    getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', groupId))),
-    getDoc(doc(db, 'familyGroups', groupId)),
-  ])
-  let memberData = members.docs.map((d) => ({ id: d.id, ...d.data() }))
-  // Older or interrupted branches get their saved primary person as an editable root.
-  if (!memberData.some((member) => !member.archived)) {
-    const primaryName = group.data()?.rootPersonName?.trim() || auth.currentUser?.displayName?.trim() || 'Primary person'
+const clean = (data) => Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined))
+const actor = () => ({ actorEmail: auth.currentUser?.email || 'unknown', actorName: auth.currentUser?.displayName || 'Family administrator' })
+const log = (batch, groupId, action, entityType, entityId, summary) => batch.set(doc(collection(db, 'activityLogs')), clean({ familyGroupId: groupId, action, entityType, entityId, summary, ...actor(), createdAt: serverTimestamp() }))
+
+export async function loadGroupData(groupId, { includeArchived = false } = {}) {
+  const [members, relationships, group] = await Promise.all([getDocs(query(collection(db, 'members'), where('familyGroupId', '==', groupId))), getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', groupId))), getDoc(doc(db, 'familyGroups', groupId))])
+  let memberData = members.docs.map((item) => ({ id: item.id, ...item.data() })).filter((member) => includeArchived || !member.archived)
+  if (!memberData.some((member) => member.isRootPerson)) {
+    const name = group.data()?.rootPersonName?.trim() || auth.currentUser?.displayName?.trim() || 'Primary person'
     const rootRef = doc(db, 'members', `${groupId}--root`)
-    await setDoc(rootRef, {
-      familyGroupId: groupId,
-      fullName: primaryName,
-      preferredName: primaryName,
-      isRootPerson: true,
-      archived: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true })
-    memberData.push({ id: rootRef.id, fullName: primaryName, preferredName: primaryName, isRootPerson: true, archived: false, familyGroupId: groupId })
+    await setDoc(rootRef, { familyGroupId: groupId, fullName: name, preferredName: name, isRootPerson: true, archived: false, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true })
+    memberData = [...memberData, { id: rootRef.id, familyGroupId: groupId, fullName: name, preferredName: name, isRootPerson: true, archived: false }]
   }
-  const placeholderRoots = memberData.filter((member) => member.isRootPerson && member.fullName === 'Self')
-  if (placeholderRoots.length) {
-    const primaryName = group.data()?.rootPersonName?.trim() || auth.currentUser?.displayName?.trim() || 'Primary person'
-    const firstPlaceholder = placeholderRoots[0].id
-    memberData = memberData.filter((member) => member.fullName !== 'Self' || !member.isRootPerson || member.id === firstPlaceholder).map((member) => member.id === firstPlaceholder ? { ...member, fullName: primaryName, preferredName: primaryName } : member)
+  // Legacy versions created a literal “Self” root before a real primary person was known.
+  // Retire that placeholder only when this branch already has another root person.
+  const rootPeople = memberData.filter((member) => member.isRootPerson)
+  const placeholderRoots = rootPeople.filter((member) => ['self', 'primary person'].includes(member.fullName?.trim().toLowerCase()))
+  const realRoot = rootPeople.find((member) => !placeholderRoots.some((placeholder) => placeholder.id === member.id))
+  if (realRoot && placeholderRoots.length) {
+    const batch = writeBatch(db)
+    placeholderRoots.forEach((placeholder) => batch.update(doc(db, 'members', placeholder.id), { archived: true, archivedAt: serverTimestamp(), legacyPlaceholder: true, updatedAt: serverTimestamp() }))
+    await batch.commit()
+    memberData = memberData.filter((member) => !placeholderRoots.some((placeholder) => placeholder.id === member.id))
   }
-  const rootPeople = memberData.filter((member) => member.isRootPerson && !member.archived)
-  const primaryRoot = rootPeople.find((member) => member.id === group.data()?.rootMemberId) || rootPeople.find((member) => member.fullName !== 'Self' && member.fullName !== 'Primary person') || rootPeople[0]
-  const duplicateRootIds = new Set(rootPeople.filter((member) => member.id !== primaryRoot?.id).map((member) => member.id))
-  if (duplicateRootIds.size) memberData = memberData.filter((member) => !duplicateRootIds.has(member.id))
-  const spouseLabels = new Set(['wife', 'husband', 'spouse', 'partner'])
-  const relationshipData = relationships.docs.map((d) => ({ id: d.id, ...d.data() })).map((relationship) => {
-    const fromMemberId = duplicateRootIds.has(relationship.fromMemberId) ? primaryRoot.id : relationship.fromMemberId
-    const toMemberId = duplicateRootIds.has(relationship.toMemberId) ? primaryRoot.id : relationship.toMemberId
-    const type = spouseLabels.has((relationship.label || '').trim().toLowerCase()) ? 'spouse' : relationship.type
-    return { ...relationship, fromMemberId, toMemberId, type }
+  const activeIds = new Set(memberData.map((member) => member.id))
+  return { group: group.exists() ? { id: group.id, ...group.data() } : null, members: memberData, relationships: relationships.docs.map((item) => ({ id: item.id, ...item.data() })).filter((relationship) => activeIds.has(relationship.fromMemberId) && activeIds.has(relationship.toMemberId)) }
+}
+
+export async function listGroups() { const snapshot = await getDocs(query(collection(db, 'familyGroups'), orderBy('updatedAt', 'desc'))); return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) }
+export async function saveGroup(data, id) { if (id) return updateDoc(doc(db, 'familyGroups', id), clean({ ...data, updatedAt: serverTimestamp() })); const ref = await addDoc(collection(db, 'familyGroups'), clean({ ...data, ownerEmail: auth.currentUser?.email || '', createdAt: serverTimestamp(), updatedAt: serverTimestamp() })); return ref }
+
+export async function saveMember(data, id) {
+  const memberData = clean({ ...data, fullName: data.fullName?.trim(), searchText: [data.fullName, data.preferredName, data.nickname, data.hometown, data.surname].filter(Boolean).join(' ').toLowerCase(), updatedAt: serverTimestamp() })
+  if (id) { await updateDoc(doc(db, 'members', id), memberData); const batch = writeBatch(db); log(batch, data.familyGroupId, 'member.updated', 'member', id, `Updated ${data.fullName}`); await batch.commit(); return { id } }
+  const ref = await addDoc(collection(db, 'members'), { ...memberData, archived: false, createdAt: serverTimestamp() }); const batch = writeBatch(db); log(batch, data.familyGroupId, 'member.created', 'member', ref.id, `Added ${data.fullName}`); await batch.commit(); return ref
+}
+
+export async function saveRelationship(data, existingId) {
+  if (data.fromMemberId === data.toMemberId) throw new Error('A person cannot be related to themself.')
+  const normalized = clean({ ...data, label: data.label.trim(), type: data.type || 'relative', updatedAt: serverTimestamp() })
+  const pairId = [normalized.fromMemberId, normalized.toMemberId].sort().join('__'); const id = existingId || `${normalized.familyGroupId}__${pairId}`; const ref = doc(db, 'relationships', id)
+  await runTransaction(db, async (transaction) => {
+    const current = await transaction.get(ref)
+    transaction.set(ref, { ...normalized, createdAt: current.exists() ? current.data().createdAt : serverTimestamp() }, { merge: true })
   })
-  return { members: memberData, relationships: relationshipData }
+  const batch = writeBatch(db); log(batch, normalized.familyGroupId, existingId ? 'relationship.updated' : 'relationship.created', 'relationship', id, normalized.label || normalized.type); await batch.commit(); return { id }
 }
-export async function cleanupVoidMembers() {
-  const voidMembers = await getDocs(query(collection(db, 'members'), where('isVoid', '==', true)))
-  if (voidMembers.empty) return
-  const voidIds = new Set(voidMembers.docs.map((item) => item.id))
-  const relationships = await getDocs(collection(db, 'relationships'))
-  const batch = writeBatch(db)
-  voidMembers.docs.forEach((item) => batch.delete(item.ref))
-  relationships.docs.filter((item) => voidIds.has(item.data().fromMemberId) || voidIds.has(item.data().toMemberId)).forEach((item) => batch.delete(item.ref))
-  await batch.commit()
-}
-export async function listGroups() { await cleanupVoidMembers(); const snap = await getDocs(query(collection(db, 'familyGroups'), orderBy('updatedAt', 'desc'))); return snap.docs.map((d) => ({ id: d.id, ...d.data() })) }
-export async function saveGroup(data, id) { if (id) return updateDoc(doc(db, 'familyGroups', id), clean({ ...data, updatedAt: serverTimestamp() })); return addDoc(collection(db, 'familyGroups'), clean({ ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })) }
-export async function saveMember(data, id) { if (id) return updateDoc(doc(db, 'members', id), clean({ ...data, updatedAt: serverTimestamp() })); return addDoc(collection(db, 'members'), clean({ ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })) }
-export async function saveRelationship(data) {
-  const spouseLabels = new Set(['wife', 'husband', 'spouse', 'partner'])
-  const isSpouse = spouseLabels.has((data.label || '').trim().toLowerCase())
-  const normalizedData = { ...data, label: isSpouse ? 'Spouse' : data.label, type: isSpouse ? 'spouse' : data.type }
-  if (normalizedData.fromMemberId === normalizedData.toMemberId) throw new Error('A member cannot be related to themself.')
-  const snapshot = await getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', data.familyGroupId)))
-  const existing = snapshot.docs.find((item) => {
-    const value = item.data()
-    return (value.fromMemberId === normalizedData.fromMemberId && value.toMemberId === normalizedData.toMemberId) || (value.fromMemberId === normalizedData.toMemberId && value.toMemberId === normalizedData.fromMemberId)
-  })
-  if (existing) return updateDoc(existing.ref, { ...normalizedData, updatedAt: serverTimestamp() })
-  const pairId = [normalizedData.fromMemberId, normalizedData.toMemberId].sort().join('__')
-  const relationshipRef = doc(db, 'relationships', `${normalizedData.familyGroupId}__${pairId}`)
-  await setDoc(relationshipRef, { ...normalizedData, createdAt: serverTimestamp() })
-  return relationshipRef
-}
-export async function findRelationship(familyGroupId, firstMemberId, secondMemberId) {
-  const snapshot = await getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', familyGroupId)))
-  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).find((item) => (item.fromMemberId === firstMemberId && item.toMemberId === secondMemberId) || (item.fromMemberId === secondMemberId && item.toMemberId === firstMemberId)) || null
-}
-export async function listMemberRelationships(familyGroupId, memberId) {
-  const snapshot = await getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', familyGroupId)))
-  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).filter((item) => item.fromMemberId === memberId || item.toMemberId === memberId)
-}
-export async function deleteRelationship(id) { return deleteDoc(doc(db, 'relationships', id)) }
-export async function getRelationship(id) {
-  const snapshot = await getDoc(doc(db, 'relationships', id))
-  if (!snapshot.exists()) return null
-  const relationship = { id: snapshot.id, ...snapshot.data() }
-  const [fromMember, toMember] = await Promise.all([getDoc(doc(db, 'members', relationship.fromMemberId)), getDoc(doc(db, 'members', relationship.toMemberId))])
-  return { ...relationship, fromMemberName: fromMember.data()?.preferredName || fromMember.data()?.fullName || 'Unknown member', toMemberName: toMember.data()?.preferredName || toMember.data()?.fullName || 'Unknown member' }
-}
-export async function updateRelationship(id, data) { return updateDoc(doc(db, 'relationships', id), { ...data, updatedAt: serverTimestamp() }) }
-export async function archiveMember(id) { return updateDoc(doc(db, 'members', id), { archived: true, updatedAt: serverTimestamp() }) }
-export async function voidMember(id) {
-  const memberRef = doc(db, 'members', id)
-  const member = await getDoc(memberRef)
-  if (!member.exists()) return
-  const relationshipSnapshot = await getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', member.data().familyGroupId)))
-  const hasRelationships = relationshipSnapshot.docs.some((item) => { const relationship = item.data(); return relationship.fromMemberId === id || relationship.toMemberId === id })
-  if (!hasRelationships) return deleteDoc(memberRef)
-  return updateDoc(memberRef, { isVoid: true, fullName: 'Void', preferredName: '', nickname: '', avatarDataUrl: '', phone: '', email: '', address: '', social: '', notes: '', updatedAt: serverTimestamp() })
-}
-export async function removeGroup(groupId) { const data = await loadGroupData(groupId); const batch = writeBatch(db); data.members.forEach((x) => batch.delete(doc(db, 'members', x.id))); data.relationships.forEach((x) => batch.delete(doc(db, 'relationships', x.id))); batch.delete(doc(db, 'familyGroups', groupId)); return batch.commit() }
+
+export async function updateRelationship(id, data) { const ref = doc(db, 'relationships', id); const existing = await getDoc(ref); if (!existing.exists()) throw new Error('Relationship no longer exists.'); return saveRelationship({ ...existing.data(), ...data }, id) }
+export async function deleteRelationship(id) { const ref = doc(db, 'relationships', id); const item = await getDoc(ref); if (!item.exists()) return; const batch = writeBatch(db); batch.delete(ref); log(batch, item.data().familyGroupId, 'relationship.deleted', 'relationship', id, item.data().label || item.data().type); return batch.commit() }
+export async function listMemberRelationships(groupId, memberId) { const snapshot = await getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', groupId))); return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).filter((item) => item.fromMemberId === memberId || item.toMemberId === memberId) }
+export async function getRelationship(id) { const item = await getDoc(doc(db, 'relationships', id)); return item.exists() ? { id: item.id, ...item.data() } : null }
+export async function archiveMember(id, groupId) { const batch = writeBatch(db); batch.update(doc(db, 'members', id), { archived: true, archivedAt: serverTimestamp(), updatedAt: serverTimestamp() }); log(batch, groupId, 'member.archived', 'member', id, 'Moved member to Trash'); return batch.commit() }
+export async function restoreMember(id, groupId) { const batch = writeBatch(db); batch.update(doc(db, 'members', id), { archived: false, archivedAt: null, updatedAt: serverTimestamp() }); log(batch, groupId, 'member.restored', 'member', id, 'Restored member from Trash'); return batch.commit() }
+export async function listTrash(groupId) { const snapshot = await getDocs(query(collection(db, 'members'), where('familyGroupId', '==', groupId))); return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).filter((item) => item.archived) }
+export async function listActivity(groupId) { const snapshot = await getDocs(query(collection(db, 'activityLogs'), where('familyGroupId', '==', groupId))); return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 50) }
+export async function mergeMembers(primaryId, duplicateId, groupId) { const [links, duplicate] = await Promise.all([getDocs(query(collection(db, 'relationships'), where('familyGroupId', '==', groupId))), getDoc(doc(db, 'members', duplicateId))]); if (!duplicate.exists()) throw new Error('Duplicate member no longer exists.')
+  const batch = writeBatch(db); links.docs.forEach((item) => { const data = item.data(); if (data.fromMemberId === duplicateId || data.toMemberId === duplicateId) { const replacement = { ...data, fromMemberId: data.fromMemberId === duplicateId ? primaryId : data.fromMemberId, toMemberId: data.toMemberId === duplicateId ? primaryId : data.toMemberId }; if (replacement.fromMemberId === replacement.toMemberId) batch.delete(item.ref); else { batch.set(doc(db, 'relationships', `${groupId}__${[replacement.fromMemberId, replacement.toMemberId].sort().join('__')}`), replacement, { merge: true }); batch.delete(item.ref) } } }); batch.update(doc(db, 'members', duplicateId), { archived: true, mergedInto: primaryId, updatedAt: serverTimestamp() }); log(batch, groupId, 'member.merged', 'member', duplicateId, `Merged into ${primaryId}`); return batch.commit() }
+export async function removeGroup(groupId) { const data = await loadGroupData(groupId, { includeArchived: true }); const batch = writeBatch(db); data.members.forEach((item) => batch.delete(doc(db, 'members', item.id))); data.relationships.forEach((item) => batch.delete(doc(db, 'relationships', item.id))); batch.delete(doc(db, 'familyGroups', groupId)); return batch.commit() }
+
+export function exportBackup(group, members, relationships) { return JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), group, members, relationships }, null, 2) }
+export function exportCsv(members) { const columns = ['fullName', 'preferredName', 'nickname', 'surname', 'hometown', 'birthDate', 'gender', 'occupation']; const esc = (value) => `"${String(value || '').replaceAll('"', '""')}"`; return [columns.join(','), ...members.map((member) => columns.map((key) => esc(member[key])).join(','))].join('\n') }
