@@ -1,0 +1,27 @@
+{
+  "name": "gujarati-family-tree",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "browser-image-compression": "latest",
+    "firebase": "latest",
+    "framer-motion": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest",
+    "reactflow": "latest"
+  },
+  "devDependencies": {
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}

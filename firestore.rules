@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'prikstheprashant@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function memberIsInGroup(memberId, groupId) {
+      return get(/databases/$(database)/documents/members/$(memberId)).data.familyGroupId == groupId;
+    }
+    function validRelationship() {
+      return request.resource.data.fromMemberId != request.resource.data.toMemberId
+        && request.resource.data.type in ['parent_child', 'spouse', 'relative']
+        && request.resource.data.label is string
+        && memberIsInGroup(request.resource.data.fromMemberId, request.resource.data.familyGroupId)
+        && memberIsInGroup(request.resource.data.toMemberId, request.resource.data.familyGroupId);
+    }
+    match /relationships/{relationshipId} {
+      allow read, delete: if isOwner();
+      allow create, update: if isOwner() && validRelationship();
+    }
+    match /familyGroups/{groupId} {
+      allow read, write: if isOwner();
+    }
+    match /members/{memberId} {
+      allow read, write: if isOwner();
+    }
+    match /memberLabels/{labelId} {
+      allow read, write: if isOwner();
+    }
+  }
+}
