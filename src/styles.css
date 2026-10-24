@@ -118,3 +118,74 @@ header { width: 100%; padding-left: clamp(20px, 3vw, 48px); padding-right: clamp
   .tree-extras > button:first-child svg { margin: 0; }
   .node-card { width: 186px; }
 }
+
+.profile-mobile-summary, .profile-expand { display: none; }
+@media (max-width: 650px) {
+  /* Selecting a person first reveals their focused tree; the full sheet is opt-in. */
+  .profile.profile-preview {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 11px;
+    height: 116px;
+    min-height: 116px;
+    max-height: 116px;
+    padding: 28px 18px 14px;
+    overflow: hidden;
+  }
+  .profile.profile-preview::before { top: 9px; }
+  .profile.profile-preview > .avatar.large {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+    margin: 0;
+    font-size: 16px;
+  }
+  .profile.profile-preview > .eyebrow,
+  .profile.profile-preview > .kinship-badge,
+  .profile.profile-preview > .profile-details,
+  .profile.profile-preview > .profile-notes,
+  .profile.profile-preview > .profile-relations,
+  .profile.profile-preview > .full { display: none; }
+  .profile.profile-preview > h2 {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .profile-mobile-summary {
+    display: block;
+    grid-column: 2;
+    grid-row: 2;
+    margin: 3px 0 0;
+    color: #8e5b68;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .profile-expand {
+    display: inline-flex;
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    min-height: 38px;
+    align-items: center;
+    border: 1px solid #dcb8c1;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--maroon);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 9px;
+  }
+  .profile.profile-preview .close { top: 8px; right: 8px; min-width: 32px; min-height: 32px; padding: 5px; }
+  .profile.profile-preview .profile-expand { margin-right: 30px; }
+  .profile.profile-expanded .profile-mobile-summary,
+  .profile.profile-expanded .profile-expand { display: none; }
+}
