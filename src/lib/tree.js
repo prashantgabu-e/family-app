@@ -31,8 +31,21 @@ export function relationshipPath(rootId, targetId, relationships) {
   if (!rootId || !targetId) return []
   const graph = new Map(); const add = (from, to, relationship) => graph.set(from, [...(graph.get(from) || []), { to, relationship }])
   relationships.forEach((relationship) => { add(relationship.fromMemberId, relationship.toMemberId, relationship); add(relationship.toMemberId, relationship.fromMemberId, relationship) })
-  const findPath = (allowCustomRelative) => { const queue = [{ id: rootId, path: [] }]; const seen = new Set([rootId]); while (queue.length) { const current = queue.shift(); if (current.id === targetId) return current.path; for (const next of graph.get(current.id) || []) { if (!allowCustomRelative && next.relationship.type === 'relative') continue; if (!seen.has(next.to)) { seen.add(next.to); queue.push({ id: next.to, path: [...current.path, next.relationship] }) } } } return [] }
-  return findPath(false).length ? findPath(false) : findPath(true)
+  const findShortestRoutes = (allowCustomRelative) => {
+    const queue = [{ id: rootId, path: [], visited: new Set([rootId]) }]; const routes = []; let shortestLength = Infinity
+    while (queue.length) {
+      const current = queue.shift()
+      if (current.path.length > shortestLength || current.path.length >= 8) continue
+      if (current.id === targetId) { shortestLength = current.path.length; routes.push(current.path); continue }
+      for (const next of graph.get(current.id) || []) {
+        if (!allowCustomRelative && next.relationship.type === 'relative') continue
+        if (!current.visited.has(next.to)) queue.push({ id: next.to, path: [...current.path, next.relationship], visited: new Set([...current.visited, next.to]) })
+      }
+    }
+    return routes
+  }
+  const routes = findShortestRoutes(false); const usableRoutes = routes.length ? routes : findShortestRoutes(true)
+  return [...new Map(usableRoutes.flat().map((relationship) => [relationship.id, relationship])).values()]
 }
 
 export function relatedMemberIds(rootId, relationships, mode = 'all') {
