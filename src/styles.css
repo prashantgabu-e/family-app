@@ -36,6 +36,8 @@ header { width: 100%; padding-left: clamp(20px, 3vw, 48px); padding-right: clamp
 .react-flow__edge.muted-edge { pointer-events: none; }.react-flow__edge.muted-edge .react-flow__edge-text, .react-flow__edge.muted-edge .react-flow__edge-textbg { opacity: .035; }
 .node-card.dimmed-node { opacity: .13; box-shadow: none; filter: saturate(.45); }
 .node-card.selected-node { border: 2px solid var(--maroon-dark); box-shadow: 0 0 0 4px #731b2d20, 0 15px 32px #57142630; transform: scale(1.04); z-index: 3; }
+.node-card.selected-node { border-width: 3px; background: linear-gradient(135deg, #fffdfc, #f9e7eb); box-shadow: 0 0 0 5px #731b2d26, 0 16px 34px #5714263b; }
+.node-card.selected-node::after { content: 'SELECTED'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); padding: 3px 8px; border: 2px solid #fffdfc; border-radius: 999px; background: var(--maroon); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: .8px; line-height: 1.2; box-shadow: 0 3px 8px #5714262e; white-space: nowrap; }
 .node-card .node-location { display: block; margin-top: 3px; color: #966270; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
 .location-picker { position: relative; margin-top: 5px; }.location-picker input { margin-top: 0 !important; }.location-picker-menu { position: absolute; z-index: 80; left: 0; right: 0; top: calc(100% + 4px); max-height: 190px; overflow-y: auto; border: 1px solid #dfc8cd; border-radius: 8px; background: #fffdfc; box-shadow: 0 10px 24px #4d102022; }.location-picker-menu button, .location-picker-menu span { display: block; width: 100%; padding: 9px 10px; border: 0; background: transparent; color: #4d1020; text-align: left; font-size: 13px; }.location-picker-menu button:hover { background: #f8e9ec; }.location-picker-menu span { color: #8d6570; }
 .location-picker-menu button.active { background: #f2dfe4; color: var(--maroon-dark); }
@@ -76,6 +78,8 @@ header { width: 100%; padding-left: clamp(20px, 3vw, 48px); padding-right: clamp
   .react-flow__controls-button { width: 38px !important; height: 38px !important; }
   .react-flow__minimap { display: none; }
   .node-card { width: 202px; min-height: 78px; padding: 10px 12px; border-radius: 12px; }
+  .node-card.selected-node { transform: scale(1.07); box-shadow: 0 0 0 5px #731b2d2b, 0 14px 30px #5714263d; }
+  .node-card.selected-node::after { top: -13px; font-size: 8px; }
   .node-card .avatar { width: 40px; height: 40px; flex-basis: 40px; }
   .node-card b { font-size: 13px; }
   .node-card .node-location { max-width: 125px; }
