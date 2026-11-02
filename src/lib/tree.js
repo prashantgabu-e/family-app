@@ -20,11 +20,25 @@ export function generationMap(members, relationships) {
 }
 
 export function layoutMembers(members, relationships) {
-  const generations = generationMap(members, relationships); const spouses = new Map()
-  relationships.filter(isSpouseRelationship).forEach((r) => { spouses.set(r.fromMemberId, r.toMemberId); spouses.set(r.toMemberId, r.fromMemberId) })
+  const nodeWidth = 250; const rowGap = 240; const siblingGap = 52; const partnerGap = 28
+  const generations = generationMap(members, relationships); const memberById = new Map(members.map((member) => [member.id, member])); const partners = new Map(); const parentsByChild = new Map()
+  relationships.filter(isSpouseRelationship).forEach((relationship) => { partners.set(relationship.fromMemberId, relationship.toMemberId); partners.set(relationship.toMemberId, relationship.fromMemberId) })
+  relationships.filter((relationship) => relationship.type === 'parent_child').forEach((relationship) => parentsByChild.set(relationship.toMemberId, [...(parentsByChild.get(relationship.toMemberId) || []), relationship.fromMemberId]))
   const rows = new Map(); members.forEach((member) => { const generation = generations.get(member.id) || 0; rows.set(generation, [...(rows.get(generation) || []), member]) })
-  for (const row of rows.values()) row.sort((a, b) => ([a.id, spouses.get(a.id) || a.id].sort()[0]).localeCompare([b.id, spouses.get(b.id) || b.id].sort()[0]) || a.fullName.localeCompare(b.fullName))
-  return members.map((member) => { const row = rows.get(generations.get(member.id) || 0); const index = row.findIndex((item) => item.id === member.id); return { ...member, generation: generations.get(member.id) || 0, position: { x: (index - (row.length - 1) / 2) * 300, y: (generations.get(member.id) || 0) * 210 } } })
+  const orderedGenerations = [...rows.keys()].sort((first, second) => first - second); const centers = new Map(); const positions = new Map()
+  orderedGenerations.forEach((generation) => {
+    const units = new Map(); (rows.get(generation) || []).forEach((member) => { const partner = partners.get(member.id); const sameGenerationPartner = partner && generations.get(partner) === generation && memberById.has(partner); const key = sameGenerationPartner ? [member.id, partner].sort().join('::') : member.id; units.set(key, [...(units.get(key) || []), member]) })
+    const orderedUnits = [...units.values()].map((unit) => unit.sort((first, second) => first.fullName.localeCompare(second.fullName))).sort((first, second) => {
+      const parentCenters = (unit) => unit.flatMap((member) => (parentsByChild.get(member.id) || []).map((id) => centers.get(id)).filter(Number.isFinite))
+      const firstParents = parentCenters(first); const secondParents = parentCenters(second); const firstScore = firstParents.length ? firstParents.reduce((sum, value) => sum + value, 0) / firstParents.length : null; const secondScore = secondParents.length ? secondParents.reduce((sum, value) => sum + value, 0) / secondParents.length : null
+      if (firstScore !== null && secondScore !== null && firstScore !== secondScore) return firstScore - secondScore
+      if (firstScore !== null) return -1; if (secondScore !== null) return 1
+      return first[0].fullName.localeCompare(second[0].fullName)
+    })
+    const rowWidth = orderedUnits.reduce((sum, unit) => sum + nodeWidth * unit.length + partnerGap * Math.max(0, unit.length - 1), 0) + siblingGap * Math.max(0, orderedUnits.length - 1); let cursor = -rowWidth / 2
+    orderedUnits.forEach((unit) => { const unitWidth = nodeWidth * unit.length + partnerGap * Math.max(0, unit.length - 1); unit.forEach((member, index) => { const x = cursor + index * (nodeWidth + partnerGap); positions.set(member.id, { x, y: generation * rowGap }); centers.set(member.id, x + nodeWidth / 2) }); cursor += unitWidth + siblingGap })
+  })
+  return members.map((member) => ({ ...member, generation: generations.get(member.id) || 0, position: positions.get(member.id) || { x: 0, y: 0 } }))
 }
 
 export function relationshipPath(rootId, targetId, relationships) {
