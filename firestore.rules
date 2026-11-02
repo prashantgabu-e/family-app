@@ -36,5 +36,8 @@ service cloud.firestore {
       allow read, create: if isOwner();
       allow update, delete: if false;
     }
+    match /dismissedSuggestions/{suggestionId} {
+      allow read, write: if isOwner();
+    }
   }
 }

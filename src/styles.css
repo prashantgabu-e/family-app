@@ -120,6 +120,19 @@ header { width: 100%; padding-left: clamp(20px, 3vw, 48px); padding-right: clamp
   .danger { min-width: 92px; }
 }
 
+.relationship-suggestions { display: grid; gap: 12px; margin-top: 16px; }
+.relationship-suggestions article { border: 1px solid var(--border, #e6cbd2); border-radius: 12px; padding: 15px; background: #fbf8ff; }
+.suggestion-heading { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.confidence, .suggestion-kind { display: inline-flex; border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 800; }
+.confidence { color: #76556f; background: #f2e8ef; }.confidence.high { color: #3e216d; background: #e7d9fa; }.suggestion-kind { color: #7c5260; background: #f8eef1; }
+.relationship-suggestions h3 { margin: 10px 0 6px; font-size: 16px; }.relationship-suggestions p { margin: 0; color: #725d63; line-height: 1.45; font-size: 13px; }
+.suggestion-people { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 13px 0; padding: 9px 10px; border-radius: 8px; background: #fffafa; color: #4b3039; font-size: 13px; }.suggestion-people span { color: var(--accent, #6430a0); font-weight: 700; }
+.relationship-suggestions .primary { margin-left: auto; display: flex; }.empty-suggestions { text-align: center; padding: 34px 18px; color: #725d63; }.empty-suggestions svg { color: var(--accent, #6430a0); }.empty-suggestions h3 { color: var(--text, #34242a); margin: 10px 0 5px; }.empty-suggestions p { max-width: 410px; margin: auto; line-height: 1.5; }
+.suggestion-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }.suggestion-actions .primary { margin-left: 0; }.suggested-edge .react-flow__edge-path { animation: suggestion-dash 1.2s linear infinite; }.suggested-edge + .react-flow__edge-text { fill: #9a6214; }
+.suggestion-actions .suggestion-discard { color: #9d3148; font-size: 12px; }.suggestion-actions .suggestion-discard:hover { background: #f9e8ed; }
+@keyframes suggestion-dash { to { stroke-dashoffset: -28; } }
+html[data-theme='dark'] .relationship-suggestions article { background: #292034; border-color: #58486d; }html[data-theme='dark'] .relationship-suggestions p, html[data-theme='dark'] .empty-suggestions, html[data-theme='dark'] .suggestion-kind { color: #cdbfd9; }html[data-theme='dark'] .relationship-suggestions h3, html[data-theme='dark'] .empty-suggestions h3, html[data-theme='dark'] .suggestion-people { color: #f1eafa; }html[data-theme='dark'] .suggestion-people { background: #201828; }html[data-theme='dark'] .suggestion-kind { background: #382a42; }.confidence { background: #eee3ea; }html[data-theme='dark'] .confidence { background: #3d3148; color: #dfcfe8; }html[data-theme='dark'] .confidence.high { background: #503875; color: #f0e7ff; }
+
 /* Final accent harmonisation for legacy component rules. */
 .node-card.selected-node { background: linear-gradient(135deg, #fffdfd, #f1e9f8); box-shadow: 0 0 0 5px #5f2f9226, 0 16px 34px #3516573b; }
 .path-node { box-shadow: 0 0 0 3px #5f2f9220, 0 12px 28px #35165722 !important; }
