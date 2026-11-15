@@ -18,7 +18,7 @@ service cloud.firestore {
     }
     match /relationships/{relationshipId} {
       allow read, delete: if isOwner();
-      allow create, update: if isOwner() && validRelationship();s
+      allow create, update: if isOwner() && validRelationship();
     }
     match /familyGroups/{groupId} {
       allow read, write: if isOwner();
