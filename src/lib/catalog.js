@@ -3,7 +3,7 @@ export const relationCatalog = [
   ['Nana', 'Maternal grandfather'], ['Nani', 'Maternal grandmother'], ['Kaka', 'Paternal uncle'], ['Kaki', 'Paternal aunt'],
   ['Foi', 'Paternal aunt'], ['Fua', 'Paternal aunt’s husband'], ['Mama', 'Maternal uncle'], ['Mami', 'Maternal aunt'],
   ['Masi', 'Maternal aunt'], ['Masa', 'Maternal aunt’s husband'], ['Bhai', 'Brother'], ['Ben', 'Sister'],
-  ['Spouse', 'Marriage partner'], ['Friends', 'Friends'],
+  ['Spouse', 'Marriage partner'], ['Friends', 'Friends'], ['Acquaintance', 'Acquaintance'],
   ['Bhabhi', 'Sister-in-law'], ['Jeth', 'Elder brother-in-law'], ['Jethani', 'Elder sister-in-law'],
   ['Devar', 'Younger brother-in-law'], ['Devrani', 'Younger sister-in-law'], ['Nanand', 'Sister-in-law'],
   ['Jijaji', 'Sister’s husband'], ['Banevi', 'Sister’s husband'], ['Nandoi', 'Husband’s sister’s husband'],

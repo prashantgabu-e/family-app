@@ -78,6 +78,27 @@ export async function syncMemberGlobalGroups(memberId, familyGroupId, globalGrou
   desired.forEach((groupId) => operations.push({ type: 'set', ref: doc(db, 'globalGroupMemberships', membershipId(groupId, memberId)), data: { globalGroupId: groupId, memberId, familyGroupId, updatedAt: serverTimestamp(), createdAt: serverTimestamp() } }))
   await commitWriteOperations(operations)
 }
+export async function bulkUpdateMembers(groupId, memberIds, { groupActions = {}, hometown = { mode: 'keep', value: '' }, birthPlace = { mode: 'keep', value: '' } } = {}) {
+  const ids = [...new Set(memberIds.filter(Boolean))]
+  if (!ids.length) throw new Error('Select at least one member.')
+  const operations = []
+  ids.forEach((memberId) => {
+    Object.entries(groupActions).forEach(([globalGroupId, action]) => {
+      const ref = doc(db, 'globalGroupMemberships', membershipId(globalGroupId, memberId))
+      if (action === 'add') operations.push({ type: 'set', ref, data: { globalGroupId, memberId, familyGroupId: groupId, createdAt: serverTimestamp(), updatedAt: serverTimestamp() } })
+      if (action === 'remove') operations.push({ type: 'delete', ref })
+    })
+    const updates = { updatedAt: serverTimestamp() }
+    if (hometown.mode === 'set') updates.hometown = hometown.value.trim()
+    if (hometown.mode === 'clear') updates.hometown = ''
+    if (birthPlace.mode === 'set') updates.birthPlace = birthPlace.value.trim()
+    if (birthPlace.mode === 'clear') updates.birthPlace = ''
+    if (Object.keys(updates).length > 1) operations.push({ type: 'set', ref: doc(db, 'members', memberId), data: updates })
+  })
+  ;[hometown, birthPlace].filter((field) => field.mode === 'set' && field.value.trim()).forEach((field) => operations.push({ type: 'set', ref: doc(db, 'locations', locationId(field.value)), data: { name: field.value.trim(), normalizedName: field.value.trim().toLowerCase(), createdAt: serverTimestamp(), updatedAt: serverTimestamp() } }))
+  await commitWriteOperations(operations)
+  return ids.length
+}
 export async function loadGlobalGroupMembers(globalGroupId) {
   const memberships = await getDocs(query(collection(db, 'globalGroupMemberships'), where('globalGroupId', '==', globalGroupId)))
   const entries = await Promise.all(memberships.docs.map(async (item) => { const membership = item.data(); const member = await getDoc(doc(db, 'members', membership.memberId)); return member.exists() ? { membership, member: { id: member.id, ...member.data() } } : null }))
@@ -112,7 +133,7 @@ export async function saveBulkMembers(groupId, rows) {
   if (rows.length > 50) throw new Error('A bulk entry can contain up to 50 members.')
   const current = await loadGroupData(groupId)
   const refs = new Map(rows.map((row) => [row.id, doc(collection(db, 'members'))]))
-  const candidates = rows.map((row) => ({ id: refs.get(row.id).id, familyGroupId: groupId, ...nameParts(row.firstName, row.lastName), hometown: row.hometown?.trim() || '', gender: row.gender || 'male', archived: false, isRootPerson: false }))
+  const candidates = rows.map((row) => ({ id: refs.get(row.id).id, familyGroupId: groupId, ...nameParts(row.firstName, row.lastName), hometown: row.hometown?.trim() || '', gender: row.gender || 'male', lifeStatus: row.lifeStatus || 'living', archived: false, isRootPerson: false }))
   rows.forEach((row, index) => { if (!row.firstName?.trim()) throw new Error(`Row ${index + 1}: first name is required.`); if (duplicateCandidates(candidates[index], [...current.members, ...candidates.filter((_, other) => other !== index)]).length) throw new Error(`Row ${index + 1}: this looks like a duplicate member.`); if (Boolean(row.relatedTo) !== Boolean(row.label?.trim())) throw new Error(`Row ${index + 1}: choose both a related person and relationship label, or leave both blank.`) })
   const resolveTarget = (value) => value?.startsWith('new:') ? refs.get(value.slice(4))?.id : value
   const links = rows.filter((row) => row.relatedTo && row.label?.trim()).map((row) => { const memberId = refs.get(row.id).id; const targetId = resolveTarget(row.relatedTo); if (!targetId || targetId === memberId) throw new Error('A member cannot be related to themself.'); const rule = relationRule(row.label); return { familyGroupId: groupId, label: row.label.trim(), type: rule.type, fromMemberId: rule.relatedIs === 'parent' ? targetId : memberId, toMemberId: rule.relatedIs === 'parent' ? memberId : targetId } })

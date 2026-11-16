@@ -7,7 +7,7 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
     function memberIsInGroup(memberId, groupId) {
-      return get(/databases/$(database)/documents/members/$(memberId)).data.familyGroupId == groupId;
+      return getAfter(/databases/$(database)/documents/members/$(memberId)).data.familyGroupId == groupId;
     }
     function validRelationship() {
       return request.resource.data.fromMemberId != request.resource.data.toMemberId

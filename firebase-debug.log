@@ -1,0 +1,101 @@
+[debug] [2026-11-16T09:06:45.634Z] ----------------------------------------------------------------------
+[debug] [2026-11-16T09:06:45.775Z] Command:       D:\Installed Softwares\Node\node.exe C:\Users\priks\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only firestore:rules
+[debug] [2026-11-16T09:06:45.776Z] CLI Version:   15.34.2
+[debug] [2026-11-16T09:06:45.776Z] Platform:      win32
+[debug] [2026-11-16T09:06:45.776Z] Node Version:  v24.13.0
+[debug] [2026-11-16T09:06:45.777Z] Detected Agent: codex_cli
+[debug] [2026-11-16T09:06:45.777Z] Time:          Mon Nov 16 2026 14:36:45 GMT+0530 (India Standard Time)
+[debug] [2026-11-16T09:06:45.777Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-11-16T09:06:45.838Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-11-16T09:06:50.987Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-16T09:06:50.987Z] > authorizing via signed-in user (heydoctorinfo@gmail.com)
+[error] 
+[error] Error: No currently active project.
+To run this command, you need to specify a project. You have two options:
+- Run this command with --project <alias_or_project_id>.
+- Set an active project by running firebase use --add, then rerun this command.
+To list all the Firebase projects to which you have access, run firebase projects:list.
+To learn about active projects for the CLI, visit https://firebase.google.com/docs/cli#project_aliases
+
+
+[debug] [2026-11-16T09:07:11.308Z] ----------------------------------------------------------------------
+[debug] [2026-11-16T09:07:11.312Z] Command:       D:\Installed Softwares\Node\node.exe C:\Users\priks\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only firestore:rules --project family-app-bed13
+[debug] [2026-11-16T09:07:11.312Z] CLI Version:   15.34.2
+[debug] [2026-11-16T09:07:11.313Z] Platform:      win32
+[debug] [2026-11-16T09:07:11.313Z] Node Version:  v24.13.0
+[debug] [2026-11-16T09:07:11.313Z] Detected Agent: codex_cli
+[debug] [2026-11-16T09:07:11.313Z] Time:          Mon Nov 16 2026 14:37:11 GMT+0530 (India Standard Time)
+[debug] [2026-11-16T09:07:11.313Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-11-16T09:07:11.330Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-11-16T09:07:13.263Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-16T09:07:13.263Z] > authorizing via signed-in user (heydoctorinfo@gmail.com)
+[debug] [2026-11-16T09:07:13.264Z] [iam] checking project family-app-bed13 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-11-16T09:07:13.266Z] Checked if tokens are valid: false, expires at: 1791142434831
+[debug] [2026-11-16T09:07:13.267Z] Checked if tokens are valid: false, expires at: 1791142434831
+[debug] [2026-11-16T09:07:13.267Z] > refreshing access token with scopes: []
+[debug] [2026-11-16T09:07:13.269Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-16T09:07:13.270Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-16T09:07:13.672Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-16T09:07:13.672Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-16T09:07:13.683Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/family-app-bed13:testIamPermissions [none]
+[debug] [2026-11-16T09:07:13.684Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/family-app-bed13:testIamPermissions  x-goog-user-project=family-app-bed13
+[debug] [2026-11-16T09:07:13.684Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/family-app-bed13:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-11-16T09:07:13.903Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-11-16T09:07:13.904Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-11-16T09:07:15.243Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/family-app-bed13:testIamPermissions 403
+[debug] [2026-11-16T09:07:15.243Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/family-app-bed13:testIamPermissions {"error":{"code":403,"message":"Caller does not have required permission to use project family-app-bed13. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=family-app-bed13 and then retry. Propagation of the new permission may take a few minutes.","status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"USER_PROJECT_DENIED","domain":"googleapis.com","metadata":{"consoleUrl":"https://console.developers.google.com/iam-admin/iam?project=family-app-bed13","service":"cloudresourcemanager.googleapis.com","containerInfo":"family-app-bed13","consumer":"projects/family-app-bed13"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Caller does not have required permission to use project family-app-bed13. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=family-app-bed13 and then retry. Propagation of the new permission may take a few minutes."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developer console IAM admin","url":"https://console.developers.google.com/iam-admin/iam?project=family-app-bed13"}]}]}}
+[debug] [2026-11-16T09:07:15.244Z] [iam] error while checking permissions, command may fail: Request to https://cloudresourcemanager.googleapis.com/v1/projects/family-app-bed13:testIamPermissions had HTTP Error: 403, Caller does not have required permission to use project family-app-bed13. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=family-app-bed13 and then retry. Propagation of the new permission may take a few minutes.
+[info] 
+[info] === Deploying to 'family-app-bed13'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-11-16T09:07:15.248Z] Checked if tokens are valid: true, expires at: 1794823632673
+[debug] [2026-11-16T09:07:15.248Z] Checked if tokens are valid: true, expires at: 1794823632673
+[debug] [2026-11-16T09:07:15.249Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/family-app-bed13/services/firestore.googleapis.com [none]
+[debug] [2026-11-16T09:07:15.249Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/family-app-bed13/services/firestore.googleapis.com  x-goog-user-project=family-app-bed13
+[debug] [2026-11-16T09:07:16.994Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/family-app-bed13/services/firestore.googleapis.com 403
+[debug] [2026-11-16T09:07:16.995Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/family-app-bed13/services/firestore.googleapis.com [omitted]
+[error] 
+[error] Error: Request to https://serviceusage.googleapis.com/v1/projects/family-app-bed13/services/firestore.googleapis.com had HTTP Error: 403, Caller does not have required permission to use project family-app-bed13. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=family-app-bed13 and then retry. Propagation of the new permission may take a few minutes.
+[debug] [2026-11-16T09:07:17.187Z] Error Context: {
+  "body": {
+    "error": {
+      "code": 403,
+      "message": "Caller does not have required permission to use project family-app-bed13. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=family-app-bed13 and then retry. Propagation of the new permission may take a few minutes.",
+      "status": "PERMISSION_DENIED",
+      "details": [
+        {
+          "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+          "reason": "USER_PROJECT_DENIED",
+          "domain": "googleapis.com",
+          "metadata": {
+            "consoleUrl": "https://console.developers.google.com/iam-admin/iam?project=family-app-bed13",
+            "service": "serviceusage.googleapis.com",
+            "consumer": "projects/family-app-bed13",
+            "containerInfo": "family-app-bed13"
+          }
+        },
+        {
+          "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+          "locale": "en-US",
+          "message": "Caller does not have required permission to use project family-app-bed13. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=family-app-bed13 and then retry. Propagation of the new permission may take a few minutes."
+        },
+        {
+          "@type": "type.googleapis.com/google.rpc.Help",
+          "links": [
+            {
+              "description": "Google developer console IAM admin",
+              "url": "https://console.developers.google.com/iam-admin/iam?project=family-app-bed13"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "response": {
+    "statusCode": 403
+  }
+}
