@@ -314,3 +314,12 @@ html[data-theme='dark'] .profile::before { background: #876a9d; }
 .backup-progress .loader { width: 16px; height: 16px; border-width: 2px; }
 .backup-success { color: #25734f !important; font-weight: 700; }
 @media (max-width: 700px) { .backup-flow { grid-template-columns: 1fr; } }
+
+/* Directory cards use the same gender cue as tree nodes, even for older records
+   whose saved gender value may be capitalized. */
+.directory-person:has(.avatar.gender-male) { background: #e5f1ff; border-color: #a9cbed; }
+.directory-person:has(.avatar.gender-female) { background: #ffe7f1; border-color: #e9b7cc; }
+.directory-person:has(.avatar.gender-male) .fallback { background: #c6e0fb; color: #235b91; }
+.directory-person:has(.avatar.gender-female) .fallback { background: #f6cadb; color: #9a3159; }
+html[data-theme='dark'] .directory-person:has(.avatar.gender-male) { background: #1d3148; border-color: #466f99; }
+html[data-theme='dark'] .directory-person:has(.avatar.gender-female) { background: #432635; border-color: #9a5873; }

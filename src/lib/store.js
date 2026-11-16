@@ -51,6 +51,7 @@ export async function loadGroupData(groupId, { includeArchived = false } = {}) {
 }
 
 export async function listGroups() { const snapshot = await getDocs(query(collection(db, 'familyGroups'), orderBy('updatedAt', 'desc'))); return snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) }
+export async function listBranchMemberCounts() { const snapshot = await getDocs(collection(db, 'members')); return snapshot.docs.reduce((counts, item) => { const member = item.data(); if (!member.archived && member.familyGroupId) counts[member.familyGroupId] = (counts[member.familyGroupId] || 0) + 1; return counts }, {}) }
 export async function saveGroup(data, id) { if (id) return updateDoc(doc(db, 'familyGroups', id), clean({ ...data, updatedAt: serverTimestamp() })); const ref = await addDoc(collection(db, 'familyGroups'), clean({ ...data, ownerEmail: auth.currentUser?.email || '', createdAt: serverTimestamp(), updatedAt: serverTimestamp() })); return ref }
 
 const globalGroupName = (name) => name.trim().replace(/\s+/g, ' ')
