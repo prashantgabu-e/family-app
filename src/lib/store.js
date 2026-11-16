@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, runTransaction, serverTimestamp, setDoc, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore'
 import { auth, db } from './firebase'
 import { relationRule } from './catalog'
 import { duplicateCandidates, validateRelationships } from './tree'
@@ -199,3 +199,100 @@ export async function importBranchBackup(backup, branchName) {
   return { id: groupRef.id, name }
 }
 export function exportCsv(members) { const columns = ['fullName', 'nickname', 'hometown', 'birthPlace', 'birthDate', 'gender', 'occupation']; const esc = (value) => `"${String(value || '').replaceAll('"', '""')}"`; return [columns.join(','), ...members.map((member) => columns.map((key) => esc(member[key])).join(','))].join('\n') }
+
+// Full backups deliberately preserve document IDs.  Relationships and global memberships
+// refer to those IDs, so generating new IDs during a disaster recovery restore would corrupt
+// the tree even if every individual document was copied successfully.
+export const FULL_BACKUP_COLLECTIONS = ['familyGroups', 'members', 'relationships', 'globalGroups', 'globalGroupMemberships', 'locations', 'memberLabels', 'dismissedSuggestions', 'activityLogs']
+const FULL_BACKUP_VERSION = 1
+const BACKUP_TIMESTAMP = '__familyTreeTimestamp__'
+const isTimestamp = (value) => value instanceof Timestamp || (value && typeof value.toDate === 'function' && typeof value.seconds === 'number')
+const encodeBackupValue = (value) => {
+  if (isTimestamp(value)) return { [BACKUP_TIMESTAMP]: true, seconds: value.seconds, nanoseconds: value.nanoseconds || 0 }
+  if (value instanceof Date) return { [BACKUP_TIMESTAMP]: true, seconds: Math.floor(value.getTime() / 1000), nanoseconds: (value.getTime() % 1000) * 1000000 }
+  if (Array.isArray(value)) return value.map(encodeBackupValue)
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, encodeBackupValue(item)]))
+  return value
+}
+const decodeBackupValue = (value) => {
+  if (Array.isArray(value)) return value.map(decodeBackupValue)
+  if (value && typeof value === 'object') {
+    if (value[BACKUP_TIMESTAMP] === true && Number.isFinite(value.seconds)) return new Timestamp(value.seconds, value.nanoseconds || 0)
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, decodeBackupValue(item)]))
+  }
+  return value
+}
+const backupPayload = (backup) => ({ format: backup.format, version: backup.version, exportedAt: backup.exportedAt, collections: backup.collections })
+const digest = async (value) => {
+  if (!globalThis.crypto?.subtle) throw new Error('This browser cannot verify secure backup checksums.')
+  const hash = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(value)))
+  return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+const backupSummary = (backup) => Object.fromEntries(FULL_BACKUP_COLLECTIONS.map((name) => [name, backup.collections[name]?.length || 0]))
+
+export async function createFullBackup() {
+  const snapshots = await Promise.all(FULL_BACKUP_COLLECTIONS.map((name) => getDocs(collection(db, name))))
+  const collections = Object.fromEntries(FULL_BACKUP_COLLECTIONS.map((name, index) => [name, snapshots[index].docs.map((item) => ({ id: item.id, data: encodeBackupValue(item.data()) }))]))
+  const backup = { format: 'family-tree-full-backup', version: FULL_BACKUP_VERSION, exportedAt: new Date().toISOString(), collections }
+  backup.checksum = await digest(backupPayload(backup))
+  return { backup, text: JSON.stringify(backup, null, 2), summary: backupSummary(backup) }
+}
+
+const backupEntries = (backup, name) => backup.collections[name] || []
+const assertReferences = (backup) => {
+  const ids = (name) => new Set(backupEntries(backup, name).map((entry) => entry.id))
+  const groupIds = ids('familyGroups'); const memberIds = ids('members'); const globalGroupIds = ids('globalGroups')
+  backupEntries(backup, 'members').forEach(({ data }, index) => { if (!groupIds.has(data.familyGroupId)) throw new Error(`Member ${index + 1} references a missing family branch.`) })
+  backupEntries(backup, 'relationships').forEach(({ data }, index) => {
+    if (!groupIds.has(data.familyGroupId) || !memberIds.has(data.fromMemberId) || !memberIds.has(data.toMemberId) || data.fromMemberId === data.toMemberId) throw new Error(`Relationship ${index + 1} has invalid member or branch references.`)
+  })
+  backupEntries(backup, 'globalGroupMemberships').forEach(({ data }, index) => {
+    if (!globalGroupIds.has(data.globalGroupId) || !memberIds.has(data.memberId) || !groupIds.has(data.familyGroupId)) throw new Error(`Global group membership ${index + 1} has invalid references.`)
+  })
+}
+
+export async function parseFullBackup(text) {
+  let backup
+  try { backup = JSON.parse(text) } catch { throw new Error('This file is not valid JSON.') }
+  if (backup?.format !== 'family-tree-full-backup' || backup.version !== FULL_BACKUP_VERSION || !backup.collections || typeof backup.checksum !== 'string') throw new Error('This is not a supported full Family Tree backup.')
+  FULL_BACKUP_COLLECTIONS.forEach((name) => {
+    if (!Array.isArray(backup.collections[name])) throw new Error(`Backup is missing the ${name} collection.`)
+    const seen = new Set()
+    backup.collections[name].forEach((entry) => { if (!entry || typeof entry.id !== 'string' || !entry.id || !entry.data || typeof entry.data !== 'object' || seen.has(entry.id)) throw new Error(`Backup has an invalid record in ${name}.`); seen.add(entry.id) })
+  })
+  if (await digest(backupPayload(backup)) !== backup.checksum) throw new Error('Backup checksum does not match. Choose an unmodified backup file.')
+  assertReferences(backup)
+  return { backup, summary: backupSummary(backup) }
+}
+
+const restoreOrder = ['familyGroups', 'locations', 'globalGroups', 'members', 'memberLabels', 'relationships', 'globalGroupMemberships', 'dismissedSuggestions', 'activityLogs']
+const deleteOrder = [...restoreOrder].reverse()
+const commitBackupChunks = async (entries, write, progress, phase, collectionName, total, completed) => {
+  for (let start = 0; start < entries.length; start += 400) {
+    const batch = writeBatch(db)
+    entries.slice(start, start + 400).forEach((entry) => write(batch, entry))
+    await batch.commit()
+    completed.value += Math.min(400, entries.length - start)
+    progress?.({ phase, collection: collectionName, completed: completed.value, total })
+  }
+}
+
+export async function restoreFullBackup(backup, onProgress) {
+  const { backup: validBackup } = await parseFullBackup(JSON.stringify(backup))
+  const existingSnapshots = await Promise.all(FULL_BACKUP_COLLECTIONS.map((name) => getDocs(collection(db, name))))
+  const total = existingSnapshots.reduce((sum, snapshot) => sum + snapshot.size, 0) + FULL_BACKUP_COLLECTIONS.reduce((sum, name) => sum + backupEntries(validBackup, name).length, 0)
+  const completed = { value: 0 }
+  for (const collectionName of deleteOrder) {
+    const snapshot = existingSnapshots[FULL_BACKUP_COLLECTIONS.indexOf(collectionName)]
+    await commitBackupChunks(snapshot.docs.map((item) => ({ id: item.id })), (batch, entry) => batch.delete(doc(db, collectionName, entry.id)), onProgress, 'Removing current data', collectionName, total, completed)
+  }
+  for (const collectionName of restoreOrder) {
+    await commitBackupChunks(backupEntries(validBackup, collectionName), (batch, entry) => batch.set(doc(db, collectionName, entry.id), decodeBackupValue(entry.data)), onProgress, 'Restoring backup', collectionName, total, completed)
+  }
+  const restored = await Promise.all(FULL_BACKUP_COLLECTIONS.map((name) => getDocs(collection(db, name))))
+  const expected = backupSummary(validBackup)
+  FULL_BACKUP_COLLECTIONS.forEach((name, index) => { if (restored[index].size !== expected[name]) throw new Error(`Restore verification failed for ${name}. Keep the recovery backup and try again.`) })
+  assertReferences(validBackup)
+  onProgress?.({ phase: 'Verified', collection: '', completed: total, total })
+  return expected
+}

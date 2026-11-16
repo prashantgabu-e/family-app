@@ -39,8 +39,10 @@ service cloud.firestore {
       allow read, write: if isOwner();
     }
     match /activityLogs/{logId} {
-      allow read, create: if isOwner();
-      allow update, delete: if false;
+      // A full disaster-recovery restore must be able to replace retained audit entries.
+      // All operations remain restricted to the single verified archive owner.
+      allow read, create, delete: if isOwner();
+      allow update: if false;
     }
     match /dismissedSuggestions/{suggestionId} {
       allow read, write: if isOwner();
