@@ -323,3 +323,108 @@ html[data-theme='dark'] .profile::before { background: #876a9d; }
 .directory-person:has(.avatar.gender-female) .fallback { background: #f6cadb; color: #9a3159; }
 html[data-theme='dark'] .directory-person:has(.avatar.gender-male) { background: #1d3148; border-color: #466f99; }
 html[data-theme='dark'] .directory-person:has(.avatar.gender-female) { background: #432635; border-color: #9a5873; }
+
+/* Keep the tree readable as a dark surface: React Flow's minimap and gender
+   colours otherwise inherit light-mode paints. */
+html[data-theme='dark'] .node-card.gender-male:not(.self-node):not(.selected-node) { background: #1d3854; border-color: #4f7eaa; color: #f2f7ff; }
+html[data-theme='dark'] .node-card.gender-female:not(.self-node):not(.selected-node) { background: #49293d; border-color: #a86481; color: #fff3f7; }
+html[data-theme='dark'] .node-card.gender-male .fallback { background: #b9d9f7; color: #1c527f; }
+html[data-theme='dark'] .node-card.gender-female .fallback { background: #f3bfd2; color: #8a2850; }
+html[data-theme='dark'] .node-card .node-location { color: #d8cbe6; }
+html[data-theme='dark'] .react-flow__background pattern circle { fill: #4c385c !important; }
+html[data-theme='dark'] .react-flow__minimap, html[data-theme='dark'] .react-flow__minimap svg { background: #181122 !important; border-color: #5b466c; }
+html[data-theme='dark'] .react-flow__minimap-mask { fill: #2a1d3a !important; fill-opacity: .72; }
+html[data-theme='dark'] .react-flow__minimap-node { fill: #c5a1ed !important; stroke: #e6d5fa !important; }
+
+/* Form controls use one dark surface everywhere, including dialogs that do not
+   use the shared .form class (bulk add, backup, location manager, and pickers). */
+html[data-theme='dark'] .dialog input:not([type='radio']):not([type='checkbox']),
+html[data-theme='dark'] .dialog textarea,
+html[data-theme='dark'] .dialog select,
+html[data-theme='dark'] .location-master-add input,
+html[data-theme='dark'] .member-picker input,
+html[data-theme='dark'] .location-picker input { background: #21192e; border-color: #604a70; color: #f2ebf8; caret-color: #e1c7ff; }
+html[data-theme='dark'] .dialog input::placeholder,
+html[data-theme='dark'] .dialog textarea::placeholder,
+html[data-theme='dark'] .member-picker input::placeholder,
+html[data-theme='dark'] .location-picker input::placeholder { color: #a998b8; opacity: 1; }
+html[data-theme='dark'] .dialog input:focus,
+html[data-theme='dark'] .dialog textarea:focus,
+html[data-theme='dark'] .dialog select:focus,
+html[data-theme='dark'] .location-master-add input:focus { border-color: #c9a3f4; outline: 2px solid #b98af044; }
+html[data-theme='dark'] .dialog input:disabled,
+html[data-theme='dark'] .dialog textarea:disabled,
+html[data-theme='dark'] .dialog select:disabled { background: #181221; border-color: #3e304b; color: #897b96; opacity: 1; }
+html[data-theme='dark'] .dialog option,
+html[data-theme='dark'] .dialog optgroup { background: #21192e; color: #f2ebf8; }
+html[data-theme='dark'] .dialog input[type='radio'],
+html[data-theme='dark'] .dialog input[type='checkbox'] { accent-color: #c29aef; }
+html[data-theme='dark'] .dialog fieldset,
+html[data-theme='dark'] .bulk-member-rows fieldset,
+html[data-theme='dark'] .gender-choice,
+html[data-theme='dark'] .optional-details { background: #1c1528; border-color: #594468; }
+html[data-theme='dark'] .dialog legend,
+html[data-theme='dark'] .dialog label,
+html[data-theme='dark'] .bulk-member-rows label { color: #eee4f6; }
+html[data-theme='dark'] .dialog input[type='file'] { color: #d9cae7; }
+html[data-theme='dark'] .dialog input[type='file']::file-selector-button { margin-right: 10px; border: 1px solid #6c527f; border-radius: 6px; background: #322443; color: #f0e5fa; padding: 6px 9px; }
+html[data-theme='dark'] .dialog input[type='file']::file-selector-button:hover { background: #443057; }
+html[data-theme='dark'] .member-picker-menu,
+html[data-theme='dark'] .location-picker-menu { box-shadow: 0 12px 28px #00000072; }
+html[data-theme='dark'] .backup-panel,
+html[data-theme='dark'] .restore-panel,
+html[data-theme='dark'] .backup-preview { background: #21192e; border-color: #594468; color: #f2ebf8; }
+html[data-theme='dark'] .backup-panel p,
+html[data-theme='dark'] .backup-panel small,
+html[data-theme='dark'] .backup-preview small,
+html[data-theme='dark'] .restore-confirmation { color: #cbbbd9; }
+html[data-theme='dark'] .activity-list p { background: #292035; border: 1px solid #594468; color: #f2ebf8; }
+html[data-theme='dark'] .activity-list p b { color: #f6effc; }
+html[data-theme='dark'] .activity-list small { color: #cbbbd9; }
+html[data-theme='dark'] .trash-row { border-color: #493654; color: #eee4f6; }
+
+/* The dashboard must own the full viewport in dark mode.  This also prevents
+   wide hero actions or branch cards from creating a light overflow canvas. */
+html, body, #root { min-height: 100%; }
+body { overflow-x: hidden; }
+#root { min-height: 100dvh; }
+html[data-theme='dark'], html[data-theme='dark'] body, html[data-theme='dark'] #root { background: #120d1d; }
+.hero { min-width: 0; }
+.hero > * { min-width: 0; }
+.hero-actions { flex-wrap: wrap; justify-content: flex-end; }
+.group-grid { min-width: 0; }
+@media (max-width: 1180px) { .hero { align-items: flex-start; flex-direction: column; }.hero-actions { justify-content: flex-start; } }
+
+/* Remaining utility, selection, and responsive components. */
+html[data-theme='dark'] .bulk-location-menu { background: #241a35; border-color: #604a70; box-shadow: 0 12px 28px #00000072; }
+html[data-theme='dark'] .bulk-location-menu button,
+html[data-theme='dark'] .bulk-location-menu span { color: #f2ebf8; }
+html[data-theme='dark'] .bulk-location-menu button:hover { background: #382749; }
+html[data-theme='dark'] .bulk-location-menu span { color: #cbbbd9; }
+html[data-theme='dark'] .global-group-list > div,
+html[data-theme='dark'] .bulk-group-actions > div { border-color: #493654; }
+html[data-theme='dark'] .global-group-list small,
+html[data-theme='dark'] .bulk-group-actions small,
+html[data-theme='dark'] .location-master-list h3 span { color: #c2b3cf; }
+html[data-theme='dark'] .group-choice { background: #241a35; border-color: #604a70; color: #eee4f6; }
+html[data-theme='dark'] .group-choice:has(input:checked) { background: #3a2852; border-color: #c29aef; color: #f5edff; box-shadow: 0 0 0 2px #b98af044; }
+html[data-theme='dark'] .group-choice:has(input:checked) .group-color-dot { box-shadow: 0 0 0 2px #241a35, 0 0 0 4px #c29aef; }
+html[data-theme='dark'] .global-member-view { background: #1b1429; border-color: #463654; color: #f2ebf8; }
+html[data-theme='dark'] .global-member-card em { color: #d9baff; }
+html[data-theme='dark'] .relation-members { background: #2a1f3a; border: 1px solid #694c7e; color: #eee4f6; }
+html[data-theme='dark'] .void-node { background: #2a2630 !important; border-color: #776779 !important; color: #e4dce7; }
+html[data-theme='dark'] .void-node .fallback { background: #5a4b5d; color: #f4edf6; }
+html[data-theme='dark'] .delete-member { border-color: #b86b82; color: #ffb4ca; }
+html[data-theme='dark'] .delete-member:hover { background: #482334; }
+html[data-theme='dark'] .danger, html[data-theme='dark'] .danger-inline { color: #ffb4ca; }
+html[data-theme='dark'] .suggestion-discard { color: #ffb4ca; }
+html[data-theme='dark'] .suggestion-discard:hover { background: #482334; }
+html[data-theme='dark'] .profile-mobile-summary { color: #cbbbd9; }
+html[data-theme='dark'] .profile-expand { background: #2d2140; border-color: #765a8c; color: #ead8ff; }
+html[data-theme='dark'] .profile-expand:hover { background: #3a294c; }
+html[data-theme='dark'] .loading { color: #d8cbe6; }
+html[data-theme='dark'] .group-color-input { background: #21192e; border-color: #604a70; }
+html[data-theme='dark'] ::-webkit-scrollbar { width: 12px; height: 12px; }
+html[data-theme='dark'] ::-webkit-scrollbar-track { background: #171020; }
+html[data-theme='dark'] ::-webkit-scrollbar-thumb { background: #5a466b; border: 3px solid #171020; border-radius: 999px; }
+html[data-theme='dark'] ::-webkit-scrollbar-thumb:hover { background: #765a8c; }
