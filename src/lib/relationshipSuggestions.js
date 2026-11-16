@@ -2,7 +2,7 @@ const parentLabelFor = (member) => member?.gender === 'female' ? 'Mummy' : membe
 
 const pairKey = (first, second) => [first, second].sort().join('::')
 const parentTerms = new Set(['papa', 'mummy', 'father', 'mother', 'dad', 'mom'])
-const siblingTerms = new Set(['bhai', 'ben', 'brother', 'sister'])
+const siblingTerms = new Set(['sibling', 'bhai', 'ben', 'brother', 'sister'])
 const spouseTerms = new Set(['spouse', 'wife', 'husband', 'partner'])
 const normalized = (value = '') => value.trim().toLowerCase()
 const labelFromParentLink = (relationship) => {
@@ -93,7 +93,7 @@ export function relationshipSuggestions(members, relationships) {
     })
   })
 
-  // A directly recorded Bhai/Ben relationship is also sufficient evidence to
+  // A directly recorded sibling relationship is also sufficient evidence to
   // propose the same parent for siblings. This is the common real-world case
   // where only one child's Papa/Mummy was entered first.
   parentLinks.forEach((parentLink) => {
@@ -119,14 +119,13 @@ export function relationshipSuggestions(members, relationships) {
     })
   })
 
-  // Children with a shared parent are siblings even when a Bhai/Ben link has
+  // Children with a shared parent are siblings even when a sibling link has
   // not been entered yet. This is a convenient, low-risk suggestion.
   childrenByParent.forEach((childIds, parentId) => {
     for (let index = 0; index < childIds.length; index += 1) {
       for (let next = index + 1; next < childIds.length; next += 1) {
         const sourceId = childIds[index]; const targetId = childIds[next]; const source = memberById.get(sourceId); const target = memberById.get(targetId); const parent = memberById.get(parentId)
-        const label = source?.gender === 'female' ? 'Ben' : source?.gender === 'male' ? 'Bhai' : null
-        if (!label) continue
+        const label = 'Sibling'
         add({ id: `siblings:${sourceId}:${targetId}`, kind: 'missing-sibling', sourceId, targetId, label, confidence: 'High confidence', evidenceMemberIds: [sourceId, targetId, parentId], evidenceRelationshipIds: parentLinks.filter((link) => link.fromMemberId === parentId && (link.toMemberId === sourceId || link.toMemberId === targetId)).map((link) => link.id), title: `Link ${source?.fullName || 'sibling'} and ${target?.fullName || 'sibling'} as siblings`, reason: `Both are recorded as children of ${parent?.fullName || 'the same parent'}.` })
       }
     }

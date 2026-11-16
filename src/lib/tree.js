@@ -20,7 +20,9 @@ export function generationMap(members, relationships) {
 }
 
 export function layoutMembers(members, relationships) {
-  const nodeWidth = 250; const rowGap = 240; const siblingGap = 52; const partnerGap = 28
+  // Partner labels sit on the connector between the two cards. Keep that lane
+  // wide enough for labels such as “Spouse” or “Husband” without touching a node.
+  const nodeWidth = 250; const rowGap = 240; const siblingGap = 52; const partnerGap = 88
   const generations = generationMap(members, relationships); const memberById = new Map(members.map((member) => [member.id, member])); const partners = new Map(); const parentsByChild = new Map()
   relationships.filter(isSpouseRelationship).forEach((relationship) => { partners.set(relationship.fromMemberId, relationship.toMemberId); partners.set(relationship.toMemberId, relationship.fromMemberId) })
   relationships.filter((relationship) => relationship.type === 'parent_child').forEach((relationship) => parentsByChild.set(relationship.toMemberId, [...(parentsByChild.get(relationship.toMemberId) || []), relationship.fromMemberId]))
